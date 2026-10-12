@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <HorizontalScrollView
+        android:id="@+id/composer_chip_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:id="@+id/composer_chips"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="2dp" />
+    </HorizontalScrollView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageButton
+            android:id="@+id/composer_attach"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@android:drawable/ic_menu_add"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/chatly_composer_attach" />
+
+        <EditText
+            android:id="@+id/composer_input"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="@string/chatly_composer_hint"
+            android:inputType="textShortMessage|textAutoCorrect"
+            android:imeOptions="actionSend"
+            android:minHeight="48dp"
+            android:padding="12dp"
+            android:background="@android:color/transparent" />
+
+        <ImageButton
+            android:id="@+id/composer_send"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@android:drawable/ic_menu_send"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/chatly_composer_send" />
+    </LinearLayout>
+</merge>

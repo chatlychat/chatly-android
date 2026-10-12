@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="chatly_primary">#FF2563EB</color>
+    <color name="chatly_bg">#FFFFFFFF</color>
+    <color name="chatly_fg">#FF0F172A</color>
+    <color name="chatly_muted_fg">#FF64748B</color>
+    <color name="chatly_border">#140F172A</color>
+    <color name="chatly_bubble_agent_bg">#FFF1F5F9</color>
+</resources>

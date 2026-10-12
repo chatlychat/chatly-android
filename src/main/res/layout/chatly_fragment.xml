@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/chatly_bg">
+
+    <LinearLayout
+        android:id="@+id/chatly_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp"
+        android:background="@color/chatly_primary">
+
+        <TextView
+            android:id="@+id/chatly_header_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/chatly_title"
+            android:textColor="@color/chatly_bg"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/chatly_tabs"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        android:background="@color/chatly_bg">
+
+        <TextView
+            android:id="@+id/tab_home"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:padding="12dp"
+            android:textColor="@color/chatly_fg"
+            android:text="@string/chatly_tab_home" />
+
+        <TextView
+            android:id="@+id/tab_messages"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:padding="12dp"
+            android:textColor="@color/chatly_fg"
+            android:text="@string/chatly_tab_messages" />
+
+        <TextView
+            android:id="@+id/tab_help"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:padding="12dp"
+            android:textColor="@color/chatly_fg"
+            android:text="@string/chatly_tab_help" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/chatly_border" />
+
+    <FrameLayout
+        android:id="@+id/chatly_content"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+</LinearLayout>

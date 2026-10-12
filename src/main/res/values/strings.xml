@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chatly_title">Chatly</string>
+    <string name="chatly_tab_home">Home</string>
+    <string name="chatly_tab_messages">Messages</string>
+    <string name="chatly_tab_help">Help</string>
+    <string name="chatly_home_welcome">Hi! How can we help today?</string>
+    <string name="chatly_help_hint">Search our knowledge base.</string>
+    <string name="chatly_composer_hint">Write a message…</string>
+    <string name="chatly_composer_send">Send</string>
+    <string name="chatly_composer_attach">Attach file</string>
+    <string name="chatly_attachment_remove">Remove attachment</string>
+</resources>
