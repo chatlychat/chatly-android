@@ -4,6 +4,22 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
     }
+    /*
+     * Versions live HERE, once.
+     *
+     * The library (the root project) and the sample both declared
+     * `version "8.4.0"` on an Android plugin, and Gradle refuses that:
+     * "Error resolving plugin [id: 'com.android.application', version:
+     * '8.4.0'] > the plugin is already on the classpath with an unknown
+     * version, so compatibility cannot be checked." With the versions in
+     * pluginManagement, each build file names the plugin and nothing else.
+     */
+    plugins {
+        id("com.android.library") version "8.4.0"
+        id("com.android.application") version "8.4.0"
+        id("org.jetbrains.kotlin.android") version "2.0.21"
+        id("org.jetbrains.kotlin.plugin.serialization") version "2.0.21"
+    }
 }
 
 dependencyResolutionManagement {

@@ -18,9 +18,10 @@
  * mirror — the one thing that asks a package whether it builds.
  */
 plugins {
-    id("com.android.library") version "8.4.0"
-    id("org.jetbrains.kotlin.android") version "2.0.21"
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.21"
+    // Versions are in settings.gradle.kts — see the note there.
+    id("com.android.library")
+    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.serialization")
     `maven-publish`
 }
 
