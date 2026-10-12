@@ -15,5 +15,5 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
-      - run: gradle :chatly:assembleRelease --no-daemon
-      - run: gradle :chatly:testReleaseUnitTest --no-daemon
+      - run: gradle assembleRelease --no-daemon
+      - run: gradle testReleaseUnitTest --no-daemon
