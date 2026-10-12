@@ -63,6 +63,19 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     implementation("org.json:json:20240303")
 
+    /*
+     * `SocketTransport.kt` imports `io.socket.client.IO` and
+     * `io.socket.client.Socket` and nothing declared this. The module had
+     * never compiled — it carried `kotlin("jvm")` for an Android library —
+     * so the missing dependency had never been reported by anything. The
+     * public mirror's CI found it on its first real build.
+     *
+     * `socket.io-client` brings `engine.io-client` and okhttp transitively.
+     * 2.1.1 is the last 2.x, which is what the realtime gateway's protocol
+     * version expects.
+     */
+    implementation("io.socket:socket.io-client:2.1.1")
+
     // Every one of these is imported by `src/main/kotlin`. The JVM plugin had
     // none of them, which is the other half of why this never compiled.
     implementation("androidx.appcompat:appcompat:1.7.0")
