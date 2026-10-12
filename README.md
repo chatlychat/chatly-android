@@ -25,7 +25,7 @@ override fun onNewToken(token: String) {
 
 ```kotlin
 dependencies {
-    implementation("com.chatly:sdk-kotlin:0.1.0")
+    implementation("com.chatlychat:chatly-android:0.1.0")
 }
 ```
 
