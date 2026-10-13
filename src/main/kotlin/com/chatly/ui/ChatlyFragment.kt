@@ -199,6 +199,14 @@ public class ChatlyFragment : Fragment() {
                 val convo = conversations.firstOrNull()
                 if (convo != null) {
                     currentConversationId = convo.id
+                    /*
+                     * Tell the client, not just ourselves. A realtime token
+                     * names ONE conversation, so the socket has to be rebound
+                     * when the thread changes — without this the fragment
+                     * renders history and then waits for envelopes on a
+                     * socket that was never opened.
+                     */
+                    Chatly.shared().openConversation(convo.id)
                     val messages = Chatly.shared().listMessages(convo.id)
                     bind(recycler, messages)
                 }

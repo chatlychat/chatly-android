@@ -15,5 +15,10 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
-      - run: gradle assembleRelease --no-daemon
-      - run: gradle testReleaseUnitTest --no-daemon
+      # ./gradlew, not bare gradle. The bare command uses whatever Gradle the
+      # runner happens to ship, and AGP 8.4.0 rejects Gradle 9.x — while
+      # setup-gradle with no gradle-version input installs nothing. So the CI
+      # was building against a version the build refuses, which is why this
+      # mirror was the one red badge of the seventeen. The wrapper pins 8.7.
+      - run: ./gradlew assembleRelease --no-daemon
+      - run: ./gradlew testReleaseUnitTest --no-daemon

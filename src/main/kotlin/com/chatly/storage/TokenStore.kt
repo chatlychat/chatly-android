@@ -14,7 +14,7 @@ import androidx.security.crypto.MasterKey
  */
 public class TokenStore internal constructor(
     private val prefs: SharedPreferences,
-) {
+) : VisitorTokenStorage {
     /** Read the persisted visitor token, if any. */
     public val token: String?
         get() = prefs.getString(KEY_TOKEN, null)
@@ -31,6 +31,14 @@ public class TokenStore internal constructor(
     public fun clear() {
         prefs.edit().clear().apply()
     }
+
+    // `VisitorTokenStorage` — the names the client calls. The three above are
+    // the published surface and stay exactly as they were.
+    override fun read(): String? = token
+
+    override fun write(value: String?): Unit = setToken(value)
+
+    override fun wipe(): Unit = clear()
 
     public companion object {
         private const val KEY_TOKEN = "visitor_token"

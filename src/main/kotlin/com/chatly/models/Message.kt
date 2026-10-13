@@ -9,13 +9,22 @@ import kotlinx.serialization.Serializable
  * payload. Image attachments (mime types starting with `image/`) render as
  * inline thumbnails; everything else renders as a file chip.
  */
+/*
+ * Everything but `id` carries a default.
+ *
+ * `messages.attachments` is a jsonb column and the message DTO serves it
+ * through unchanged, so a row written before a field existed — or by an
+ * importer, or by the API-key send path — can be missing any of these. A
+ * strict decode turns that into a `MissingFieldException` on an otherwise
+ * fine reply, which reads as a broken SDK rather than a thin attachment.
+ */
 @Serializable
 public data class Attachment(
     val id: String,
-    val url: String,
-    val filename: String,
-    val mimeType: String,
-    val sizeBytes: Long,
+    val url: String = "",
+    val filename: String = "",
+    val mimeType: String = "application/octet-stream",
+    val sizeBytes: Long = 0L,
 ) {
     /** True when this attachment should be rendered as an inline image. */
     val isImage: Boolean
