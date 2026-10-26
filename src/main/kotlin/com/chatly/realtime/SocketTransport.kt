@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
 
 /**
  * The visitor's live connection, as decoded [RealtimeEnvelope]s.
@@ -137,11 +139,51 @@ public class SocketTransport(
         synchronized(lock) { reconnect = job }
     }
 
-    /** Report a read receipt — the one event a visitor may publish. */
-    public fun emitRead(conversationId: String, messageId: String) {
-        val payload = """{"conversationId":"$conversationId","messageId":"$messageId"}"""
+    /**
+     * Report a read receipt — the one event a visitor may publish.
+     *
+     * The payload is `messageReadPayloadSchema`, in full. It used to be
+     * `{"conversationId","messageId"}`, which the gateway's `safeParse`
+     * rejected on three missing required fields AND a misnamed anchor, after
+     * which the handler returned silently. Even a successful parse would then
+     * have been refused: the visitor branch requires `readerType == "contact"`
+     * and `readerId == contactId` from the socket's own token, so a receipt
+     * that does not name its reader can never be accepted.
+     *
+     * `readAt` is ISO-8601 with a `Z` offset because the schema is
+     * `z.string().datetime()`, which rejects an offset like `+01:00`.
+     */
+    public fun emitRead(conversationId: String, contactId: String, upToMessageId: String? = null) {
+        /*
+         * Built with `buildJsonObject` rather than string concatenation.
+         * The first draft of this fix assembled the optional anchor inside a
+         * raw string and wrote `\"` to close it — in a Kotlin raw string a
+         * backslash is literal, so that would have emitted a stray backslash
+         * and produced invalid JSON: the same silent `safeParse` failure this
+         * method is being fixed for, reintroduced by the fix.
+         */
+        val payload =
+            buildJsonObject {
+                put("conversationId", JsonPrimitive(conversationId))
+                put("readAt", JsonPrimitive(isoNow()))
+                put("readerType", JsonPrimitive("contact"))
+                put("readerId", JsonPrimitive(contactId))
+                if (upToMessageId != null) {
+                    put("upToMessageId", JsonPrimitive(upToMessageId))
+                }
+            }.toString()
         synchronized(lock) { socket }?.emit(MESSAGE_READ_CHANNEL, payload)
     }
+
+    /**
+     * `readAt` for a read receipt: UTC, milliseconds, `Z`.
+     *
+     * `z.string().datetime()` with no options accepts only a `Z` offset, so a
+     * device-local offset would be refused by the same silent `safeParse`
+     * this method's payload was already failing.
+     */
+    private fun isoNow(): String =
+        java.time.format.DateTimeFormatter.ISO_INSTANT.format(java.time.Instant.now())
 
     /** Close, and stop reconnecting. */
     public fun disconnect() {

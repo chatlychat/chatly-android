@@ -35,7 +35,20 @@ public data class Attachment(
  * Message row as returned by `/v1/widget/messages/list`.
  *
  * @property authorType `contact` | `agent` | `bot` | `system`.
- * @property kind `text` | `image` | `file` | `event` | `attachment_only` | `internal_note`.
+ * @property kind `text` | `rich` | `attachment_only` | `system_event`.
+ *
+ * This line used to read
+ * `text | image | file | event | attachment_only | internal_note`, and four
+ * of those six are not members of the server's `message_kind` enum
+ * (`text | rich | note | system_event | attachment_only`) — so a reader
+ * writing `kind == "image"` against the documented contract was writing a
+ * comparison that is always false. `rich`, the kind every formatted reply and
+ * every bot card carries, was not documented at all.
+ *
+ * `note` is absent on purpose: an agent's internal comment never reaches a
+ * visitor. The realtime gateway's `VISITOR_VISIBLE_MESSAGE_KINDS` excludes
+ * it; the history route's SQL excludes it and `system_event` as well, so
+ * `system_event` arrives on the socket and is gone after a reload.
  */
 @Serializable
 public data class MessageRow(

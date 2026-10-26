@@ -72,7 +72,7 @@ public class Chatly internal constructor(
     public val channelPublicId: String,
     public val baseUrl: String,
     private val transport: HttpTransport,
-    private val storage: VisitorTokenStorage,
+    internal val storage: VisitorTokenStorage,
     private val socketFactory: RealtimeSocketFactory,
     private val realtimeUrlOverride: String? = null,
     private val reconnectDelayMs: Long = 1_000L,
@@ -81,10 +81,20 @@ public class Chatly internal constructor(
     /** Palette applied by every bundled UI surface. Set it before presenting. */
     public var theme: ChatlyTheme = ChatlyTheme()
 
-    private val json = Json { ignoreUnknownKeys = true }
+    internal val json = Json { ignoreUnknownKeys = true }
 
     /** `realtimeUrl` as `init` reported it. Null until the first init. */
     @Volatile private var serverRealtimeUrl: String? = null
+
+    /**
+     * `session.contactId` from the last init.
+     *
+     * Needed by [markRead]: the gateway requires the reader to identify
+     * themselves and refuses a receipt whose `readerId` is not the socket's
+     * own contact. Nothing kept it before, which is part of why the read
+     * receipt could not be built correctly.
+     */
+    @Volatile private var sessionContactId: String? = null
 
     /**
      * The thread this client is pointed at. Set by [startConversation] and
@@ -218,6 +228,7 @@ public class Chatly internal constructor(
         val parsed = json.decodeFromString(InitResponse.serializer(), post("/v1/widget/init", body))
         storage.write(parsed.session.token)
         serverRealtimeUrl = parsed.realtimeUrl
+        sessionContactId = parsed.session.contactId
         return parsed
     }
 
@@ -225,6 +236,7 @@ public class Chatly internal constructor(
     public fun logout() {
         disconnectRealtime()
         activeConversationId = null
+        sessionContactId = null
         storage.wipe()
     }
 
@@ -274,6 +286,37 @@ public class Chatly internal constructor(
             ConversationListResponse.serializer(),
             post("/v1/widget/conversations/list", body),
         ).conversations
+    }
+
+    /**
+     * `POST /v1/widget/conversations/{id}/read` — persist how far the visitor
+     * has read.
+     *
+     * The DURABLE half of a read receipt, and none of the four mobile SDKs
+     * had it: only the web widget ever called this route. Every one of them
+     * renders the unread badge from the server's own `unreadContactCount`,
+     * so without this the count could only go UP — it survived app restarts,
+     * and the agent inbox never learned a native visitor had seen the
+     * thread.
+     *
+     * Distinct from [markRead], which emits the realtime "Read ✓" tick over
+     * the socket. That one is advisory and vanishes with the connection; this
+     * one is the row. An app wanting both behaviours calls both, and calling
+     * only this one is the safer half to have.
+     *
+     * `upToMessageId` is optional server-side: omitting it means "I have read
+     * this thread as of now", which is what an app that does not track
+     * per-message visibility should send.
+     */
+    public suspend fun persistRead(upToMessageId: String? = null): Boolean {
+        val conversationId = activeConversationId ?: return false
+        val body = JSONObject().apply {
+            put("publicId", channelPublicId)
+            put("visitorToken", ensureToken())
+            putIfNotNull("upToMessageId", upToMessageId)
+        }
+        post("/v1/widget/conversations/$conversationId/read", body)
+        return true
     }
 
     /** `POST /v1/widget/messages/list` — one thread's history. */
@@ -404,36 +447,6 @@ public class Chatly internal constructor(
         )
     }
 
-    // ───────────────────────── knowledge base ─────────────────────────
-
-    /** `POST /v1/widget/kb/search`. `visitorToken` is optional here. */
-    public suspend fun searchKb(query: String, limit: Int = 8): List<KbResult> {
-        val body = JSONObject().apply {
-            put("publicId", channelPublicId)
-            putIfNotNull("visitorToken", storage.read())
-            put("query", query)
-            put("limit", limit)
-            put("locale", java.util.Locale.getDefault().toLanguageTag())
-        }
-        return json.decodeFromString(
-            KbSearchResponse.serializer(),
-            post("/v1/widget/kb/search", body),
-        ).results
-    }
-
-    /** `POST /v1/widget/kb/article`. */
-    public suspend fun kbArticle(slug: String): KbArticle {
-        val body = JSONObject().apply {
-            put("publicId", channelPublicId)
-            putIfNotNull("visitorToken", storage.read())
-            put("slug", slug)
-        }
-        return json.decodeFromString(
-            KbArticleResponse.serializer(),
-            post("/v1/widget/kb/article", body),
-        ).article
-    }
-
     // ───────────────────────── realtime ─────────────────────────
 
     /**
@@ -458,10 +471,30 @@ public class Chatly internal constructor(
         bindRealtime(conversationId)
     }
 
-    /** Report a read receipt for the open conversation. */
-    public fun markRead(messageId: String) {
-        val conversationId = activeConversationId ?: return
-        synchronized(lock) { realtime }?.emitRead(conversationId, messageId)
+    /**
+     * Report a read receipt for the open conversation.
+     *
+     * This sent `{"conversationId","messageId"}` and was a SILENT NO-OP on
+     * every installed Android app. `messageReadPayloadSchema` names the
+     * anchor `upToMessageId`, and requires `readAt`, `readerType` and
+     * `readerId` besides — so `safeParse` failed at the gateway and the
+     * handler returned without a word. The agent never saw the "Read" tick
+     * and the visitor's badge never cleared, with no error anywhere.
+     *
+     * `upToMessageId` is optional server-side, which is exactly why the
+     * wrong name was survivable-looking rather than loud: supply the other
+     * four correctly and a misnamed anchor parses fine and is dropped.
+     *
+     * Returns false when the receipt could not be sent, rather than failing
+     * silently as before — there is no conversation open, no socket, or no
+     * session to name as the reader.
+     */
+    public fun markRead(upToMessageId: String? = null): Boolean {
+        val conversationId = activeConversationId ?: return false
+        val contactId = sessionContactId ?: return false
+        val transport = synchronized(lock) { realtime } ?: return false
+        transport.emitRead(conversationId, contactId, upToMessageId)
+        return true
     }
 
     /** Close the socket and stop reconnecting. */
@@ -563,7 +596,7 @@ public class Chatly internal constructor(
      * widget surface is `@Public()` and has never read one, so a bearer token
      * here was decoration on a request that failed for a different reason.
      */
-    private suspend fun post(path: String, body: JSONObject): String {
+    internal suspend fun post(path: String, body: JSONObject): String {
         val res = transport.postJson(
             url = "$baseUrl$path",
             json = body.toString(),
@@ -576,7 +609,8 @@ public class Chatly internal constructor(
     }
 }
 
-private fun JSONObject.putIfNotNull(key: String, value: Any?) {
+// `internal`, not `private`: `Chatly+Kb.kt` builds its bodies with this too.
+internal fun JSONObject.putIfNotNull(key: String, value: Any?) {
     if (value != null) put(key, value)
 }
 
