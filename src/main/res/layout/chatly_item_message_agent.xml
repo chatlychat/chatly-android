@@ -26,6 +26,14 @@
             android:textColor="@color/chatly_fg" />
 
         <LinearLayout
+            android:id="@+id/message_blocks"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:layout_marginTop="6dp" />
+
+        <LinearLayout
             android:id="@+id/message_attachments"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

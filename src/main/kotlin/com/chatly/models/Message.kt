@@ -1,6 +1,7 @@
 package com.chatly.models
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
 /**
  * One file or image attached to a message.
@@ -58,6 +59,28 @@ public data class MessageRow(
     val body: String,
     val attachments: List<Attachment> = emptyList(),
     val createdAt: String,
+    /**
+     * The rich-block envelope, `{ v: 1, blocks: [...] }`, on a `rich`
+     * message — a card, a product grid, a fulfilment timeline, a comparison
+     * table. Null on a plain one.
+     *
+     * Loosely typed ON PURPOSE, matching `MessageRow.blocks` in
+     * `packages/sdk-react-native`. `kind = 'rich'` is the most common
+     * non-text kind on a visitor thread (every bot card is one), and until
+     * 2026-10-27 this field did not exist at all, so every card on Android
+     * arrived as bare `body` text with no error. A typed envelope here would
+     * trade that silence for a different failure: a server newer than the
+     * app sends block types this app has never heard of, and a strict decode
+     * would throw away the whole MESSAGE rather than the one block it cannot
+     * draw. `JsonElement` accepts any JSON value, so a malformed `blocks`
+     * cannot fail the decode of the message it rides on.
+     *
+     * Read it with [com.chatly.blocks.ChatlyBlocks.read], which validates at
+     * render time and drops what it cannot draw. The twelve block types the
+     * SDK renders and the two spatial fields it does not are documented on
+     * [com.chatly.blocks.ChatlyBlock].
+     */
+    val blocks: JsonElement? = null,
 )
 
 /** Wrapper for `/v1/widget/messages/list`. */

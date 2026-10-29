@@ -124,6 +124,9 @@ public class ChatlyFragment : Fragment() {
             body = payload.str("body").orEmpty(),
             attachments = attachments,
             createdAt = payload.str("createdAt").orEmpty(),
+            // A bot's card arrives HERE, not through history — a realtime row
+            // built without this renders the card as bare body text.
+            blocks = payload["blocks"],
         )
         val adapter = messagesAdapter ?: return
         if (adapter.append(row)) {
@@ -278,6 +281,19 @@ public class ChatlyFragment : Fragment() {
 
     private fun bind(recycler: RecyclerView, messages: List<MessageRow>) {
         val adapter = messagesAdapter ?: MessageListAdapter(emptyList()).also {
+            it.blocks.theme = Chatly.shared().theme
+            /*
+             * A quick reply IS an ordinary visitor message, so it is sent.
+             * Every other action goes to the host instead — this SDK has no
+             * postback / canvas / action-report transport, and a `url` falls
+             * back to an ACTION_VIEW intent inside the renderer. See
+             * `ChatlyBlocksRenderer`'s header.
+             */
+            it.blocks.onQuickReply = { value ->
+                viewLifecycleOwner.lifecycleScope.launch {
+                    runCatching { Chatly.shared().send(value) }
+                }
+            }
             messagesAdapter = it
             recycler.adapter = it
         }

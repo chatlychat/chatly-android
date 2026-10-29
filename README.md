@@ -58,6 +58,20 @@ override fun onNewToken(token: String) {
 `ChatlyFragment` (Home / Messages / Help, a `RecyclerView` thread and a
 composer with attachments). Set `Chatly.shared().theme` before presenting.
 
+### Rich blocks
+
+A `rich` message carries `MessageRow.blocks` — a card, a product grid, a
+fulfilment timeline, a comparison table, quick replies — and the bundled
+thread draws them. `ChatlyBlocks.read(row.blocks)` is public if you render
+your own: it validates at render time, drops what it cannot draw, and never
+throws, so a server newer than the app loses the one block it does not know
+rather than the message.
+
+A pressed button goes to `MessageListAdapter.blocks.onAction` with the
+message id, because this SDK has no postback or canvas transport — the host
+runs its own payment sheet or screen from it. A `url` action falls back to an
+`ACTION_VIEW` intent, and a quick reply is sent as an ordinary message.
+
 ## Install (Gradle)
 
 Not on Maven Central yet — see
